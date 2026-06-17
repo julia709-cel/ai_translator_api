@@ -1,0 +1,38 @@
+{
+  "info": {
+    "name": "AI Translator API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": { "method": "GET", "url": "http://localhost:8000/health" }
+    },
+    {
+      "name": "Translate EN to RU",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": { "mode": "raw", "raw": "{\"text\": \"Hello world, how are you?\", \"direction\": \"en-ru\"}" },
+        "url": "http://localhost:8000/analyze"
+      }
+    },
+    {
+      "name": "Translate RU to EN",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": { "mode": "raw", "raw": "{\"text\": \"Привет мир, как дела?\", \"direction\": \"ru-en\"}" },
+        "url": "http://localhost:8000/analyze"
+      }
+    },
+    {
+      "name": "Get History",
+      "request": { "method": "GET", "url": "http://localhost:8000/history" }
+    },
+    {
+      "name": "Get History by ID",
+      "request": { "method": "GET", "url": "http://localhost:8000/history/1" }
+    }
+  ]
+}
