@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Translator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-8">
+    <div class="max-w-4xl w-full bg-white rounded-xl shadow-lg p-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">🤖 AI Translator API</h1>
+        
+        <!-- Форма перевода -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Исходный текст</label>
+                <textarea id="inputText" rows="5" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Введите текст..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Результат перевода</label>
+                <textarea id="outputText" rows="5" class="w-full p-3 border rounded-lg bg-gray-50" readonly></textarea>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-6">
+            <select id="direction" class="p-2 border rounded-lg">
+                <option value="en-ru">English → Russian</option>
+                <option value="ru-en">Russian → English</option>
+            </select>
+            <button onclick="translateText()" id="btnTranslate" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition flex items-center">
+                <span id="btnText">Перевести</span>
+                <svg id="loader" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- История -->
+        <h2 class="text-xl font-semibold text-gray-800 mb-4 border-t pt-6">История запросов</h2>
+        <div id="historyList" class="space-y-3 max-h-96 overflow-y-auto">
+            <p class="text-gray-500 text-center">Загрузка истории...</p>
+        </div>
+    </div>
+
+    <script>
+        async function translateText() {
+            const text = document.getElementById('inputText').value;
+            const direction = document.getElementById('direction').value;
+            const btn = document.getElementById('btnTranslate');
+            const btnText = document.getElementById('btnText');
+            const loader = document.getElementById('loader');
+
+            if (!text.trim()) {
+                alert('Введите текст!');
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerText = 'Модель думает...';
+            loader.classList.remove('hidden');
+
+            try {
+                const res = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text, direction})
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('outputText').value = data.result;
+                    loadHistory();
+                } else {
+                    alert('Ошибка: ' + data.detail);
+                }
+            } catch (e) {
+                alert('Ошибка сети');
+            } finally {
+                btn.disabled = false;
+                btnText.innerText = 'Перевести';
+                loader.classList.add('hidden');
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/history');
+                const data = await res.json();
+                const list = document.getElementById('historyList');
+                if (data.length === 0) {
+                    list.innerHTML = '<p class="text-gray-500 text-center">История пуста</p>';
+                    return;
+                }
+                list.innerHTML = data.map(item => `
+                    <div class="p-3 bg-gray-50 rounded-lg border">
+                        <div class="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>ID: ${item.id} | ${item.direction}</span>
+                            <span>${new Date(item.created_at).toLocaleString()}</span>
+                        </div>
+                        <p class="text-sm"><b>IN:</b> ${item.input_text}</p>
+                        <p class="text-sm text-blue-700"><b>OUT:</b> ${item.result_text}</p>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        loadHistory();
+    </script>
+</body>
+</html>
